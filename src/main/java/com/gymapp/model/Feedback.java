@@ -3,13 +3,18 @@ package com.gymapp.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import lombok.Getter; // NEW
+import lombok.Setter; // NEW
+import lombok.ToString; // NEW
+// import lombok.Data; // DELETE THIS
+
 
 import java.time.LocalDateTime;
+@Getter // ADD THIS
+@Setter // ADD THIS
 
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

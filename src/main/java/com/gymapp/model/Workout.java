@@ -1,51 +1,60 @@
 package com.gymapp.model;
 
-import com.gymapp.model.enums.Sender;
+import com.gymapp.model.enums.WorkoutStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import lombok.Getter; // NEW
 import lombok.Setter; // NEW
 import lombok.ToString; // NEW
 // import lombok.Data; // DELETE THIS
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+
 @Getter // ADD THIS
 @Setter // ADD THIS
+
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "chat_history")
-public class ChatHistory {
+@Table(name = "workouts")
+public class Workout {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "message_id")
-    private Long messageId;
+    @Column(name = "workout_id")
+    private Long workoutId;
 
     // Link back to the user
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    // We use our new Enum here
-    // @Enumerated(EnumType.STRING) tells JPA to store
-    // "USER" or "AI" as a string, which matches your SQL CHECK
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Sender sender;
+    @Column(name = "workout_date")
+    private LocalDate workoutDate;
 
-    @Column(name = "message_text", nullable = false, columnDefinition = "TEXT")
-    private String messageText;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private WorkoutStatus status;
+
+    // This maps our String field to the JSONB column
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "workout_data", columnDefinition = "jsonb")
+    private String workoutData; // We'll store the plan as a JSON string
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "is_summarized")
-    private Boolean isSummarized = false;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

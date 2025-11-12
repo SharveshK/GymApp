@@ -4,12 +4,17 @@ import com.gymapp.model.enums.*;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+
 import lombok.NoArgsConstructor;
+import lombok.Getter; // NEW
+import lombok.Setter; // NEW
+import lombok.ToString; // NEW
+// import lombok.Data; // DELETE THIS
 
 import java.time.LocalDate;
+@Getter // ADD THIS
+@Setter // ADD THIS
 
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

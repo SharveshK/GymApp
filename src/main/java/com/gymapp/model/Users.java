@@ -3,7 +3,6 @@ package com.gymapp.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,13 +13,21 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List; // Make sure to import java.util.List
 import java.util.Set;
+import lombok.Getter; // NEW
+import lombok.Setter; // NEW
+import lombok.ToString; // NEW
+// import lombok.Data; // DELETE THIS
 
-@Data // Creates getters, setters, toString, equals, hashCode
+@Getter // ADD THIS
+@Setter // ADD THIS
+
+
 @Builder // Lets you build objects like: Users.builder().email("...").build()
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "users")
+@ToString(exclude = {"availableEquipment", "allergies", "medicalConditions", "dislikedFoods", "customEquipment"})
 public class Users implements UserDetails {
 
     @Id

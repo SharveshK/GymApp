@@ -1,13 +1,19 @@
 package com.gymapp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.util.HashSet;
 import java.util.Set;
+import lombok.Getter; // NEW
+import lombok.Setter; // NEW
+import lombok.ToString; // NEW
+// import lombok.Data; // DELETE THIS
 
-@Data
+@Getter // ADD THIS
+@Setter // ADD THIS
+
 @Entity
 @Table(name = "allergies")
+@ToString(exclude = {"users"})
 public class Allergy {
 
     @Id

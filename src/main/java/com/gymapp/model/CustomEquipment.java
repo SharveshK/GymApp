@@ -1,10 +1,15 @@
 package com.gymapp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Getter; // NEW
+import lombok.Setter; // NEW
+import lombok.ToString; // NEW
+// import lombok.Data; // DELETE THIS
 
-@Data
+@Getter // ADD THIS
+@Setter // ADD THIS
+
 @NoArgsConstructor
 @Entity
 @Table(name = "custom_equipment")

@@ -4,14 +4,17 @@ import com.gymapp.model.enums.DietPlanStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode; // Import this!
 import org.hibernate.type.SqlTypes; // Import this!
+import lombok.Getter; // NEW
+import lombok.Setter; // NEW
+import lombok.ToString; // NEW
+// import lombok.Data; // DELETE THIS
 
 import java.time.LocalDate;
-
-@Data
+@Getter // ADD THIS
+@Setter // ADD THIS
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
