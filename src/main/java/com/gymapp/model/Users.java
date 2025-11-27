@@ -94,6 +94,7 @@ public class Users implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "equipment_id")
     )
+    @Builder.Default
     private Set<Equipment> availableEquipment = new HashSet<>();
 
     // --- Many-to-Many Relationship for Allergies ---
@@ -103,6 +104,7 @@ public class Users implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "allergy_id")
     )
+    @Builder.Default
     private Set<Allergy> allergies = new HashSet<>();
 
     // --- Many-to-Many Relationship for Medical Conditions ---
@@ -112,6 +114,7 @@ public class Users implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "condition_id")
     )
+    @Builder.Default
     private Set<MedicalCondition> medicalConditions = new HashSet<>();
 
     // --- Many-to-Many Relationship for Disliked Foods ---
@@ -121,6 +124,7 @@ public class Users implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "food_id")
     )
+    @Builder.Default
     private Set<Food> dislikedFoods = new HashSet<>();
 
     // --- One-to-Many Relationship for Custom Equipment ---
@@ -129,6 +133,7 @@ public class Users implements UserDetails {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Builder.Default
     private Set<CustomEquipment> customEquipment = new HashSet<>();
 
     // ... your existing UserDetails methods (getAuthorities, etc.) ...
