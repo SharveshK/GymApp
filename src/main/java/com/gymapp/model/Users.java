@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.authority.SimpleGrantedAuthority; // ADD THIS IMPORT
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -40,6 +41,8 @@ public class Users implements UserDetails {
 
     @Column(name = "password_hash", nullable = false)
     private String password; // We'll store the hash here
+    @Column(name = "role")
+    private String role; // Will store "ROLE_USER" or "ROLE_ADMIN"
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -54,8 +57,12 @@ public class Users implements UserDetails {
         // For now, we'll return a simple authority.
         // Later, you can have a "roles" table and link it here.
         // e.g., return List.of(new SimpleGrantedAuthority("ROLE_USER"));
-        return List.of();
+        if (role == null) {
+            return List.of();
+        }
+        return List.of(new SimpleGrantedAuthority(role));
     }
+
 
     @Override
     public String getPassword() {

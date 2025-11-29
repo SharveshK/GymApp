@@ -30,7 +30,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/v1/chat/**").authenticated() // <--- ADD THIS LINE EXPLICITLY
+                        .requestMatchers("/api/v1/**").authenticated() // Catch-all for other endpoints
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

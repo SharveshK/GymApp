@@ -3,44 +3,46 @@ package com.gymapp.service;
 import com.gymapp.dto.AuthResponse;
 import com.gymapp.dto.LoginRequest;
 import com.gymapp.dto.RegisterRequest;
-import com.gymapp.model.*; // Import all models
-import com.gymapp.repository.*; // Import all repositories
+import com.gymapp.model.*;
+import com.gymapp.repository.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Import this!
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Service
 public class AuthService {
 
-    // --- All of our required "tools" ---
     private final UserRepository userRepository;
+    private final AiTriggerService aiTriggerService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    // --- NEW "tools" for Phase 3.5 ---
     private final UserProfileRepository userProfileRepository;
     private final AllergyRepository allergyRepository;
     private final MedicalConditionRepository medicalConditionRepository;
     private final EquipmentRepository equipmentRepository;
     private final FoodRepository foodRepository;
 
-    // --- The new, larger manual constructor ---
     public AuthService(UserRepository userRepository,
+                       AiTriggerService aiTriggerService,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        AuthenticationManager authenticationManager,
-                       UserProfileRepository userProfileRepository, // new
-                       AllergyRepository allergyRepository, // new
-                       MedicalConditionRepository medicalConditionRepository, // new
-                       EquipmentRepository equipmentRepository, // new
-                       FoodRepository foodRepository) { // new
+                       UserProfileRepository userProfileRepository,
+                       AllergyRepository allergyRepository,
+                       MedicalConditionRepository medicalConditionRepository,
+                       EquipmentRepository equipmentRepository,
+                       FoodRepository foodRepository) {
         this.userRepository = userRepository;
+        this.aiTriggerService = aiTriggerService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
@@ -51,13 +53,7 @@ public class AuthService {
         this.foodRepository = foodRepository;
     }
 
-    /**
-     * Registers a new user WITH their full profile.
-     * This is a @Transactional operation. If *any* part fails
-     * (e.g., saving the profile), the entire operation will be
-     * rolled back, and the user will not be created.
-     */
-    @Transactional(rollbackFor = Exception.class) // This is critical
+    @Transactional(rollbackFor = Exception.class)
     public AuthResponse register(RegisterRequest request) {
 
         // 1. Check if email already exists
@@ -65,8 +61,7 @@ public class AuthService {
             throw new IllegalStateException("Email already taken");
         }
 
-        // 2. Fetch all the "List" entities from the DB
-        // We do this by finding all entities by their IDs
+        // 2. Fetch Lists
         Set<Allergy> allergies = new HashSet<>();
         if (request.getAllergyIds() != null) {
             allergies = new HashSet<>(allergyRepository.findAllById(request.getAllergyIds()));
@@ -87,37 +82,32 @@ public class AuthService {
             dislikedFoods = new HashSet<>(foodRepository.findAllById(request.getDislikedFoodIds()));
         }
 
-        // 3. Create the main 'Users' entity
+        // 3. Create User
         Users user = Users.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                // Assign all the lists we just fetched
+                .password(passwordEncoder.encode(request.getPassword()))// if you did, remove these two lines
                 .allergies(allergies)
                 .medicalConditions(medicalConditions)
                 .availableEquipment(equipment)
                 .dislikedFoods(dislikedFoods)
                 .build();
 
-        // 4. Handle 'Custom Equipment' (One-to-Many)
-        // We create new objects and link them to the user
+        // 4. Handle Custom Equipment
         if (request.getCustomEquipmentNames() != null) {
             request.getCustomEquipmentNames().forEach(name -> {
-                // This assumes your CustomEquipment model has a constructor
-                // or that we correctly set the 'user' link
-                // Let's ensure the link is set
                 CustomEquipment ce = new CustomEquipment();
-                ce.setUser(user); // Link to the user
+                ce.setUser(user);
                 ce.setName(name);
-                user.getCustomEquipment().add(ce); // Add to the set
+                user.getCustomEquipment().add(ce);
             });
         }
 
-        // 5. Save the 'Users' entity (and its 'cascaded' custom equipment)
+        // 5. Save User
         Users savedUser = userRepository.save(user);
 
-        // 6. Create and save the 'UserProfile' entity
+        // 6. Create Profile
         UserProfile userProfile = UserProfile.builder()
-                .user(savedUser) // Link to the user we just saved
+                .user(savedUser)
                 .dateOfBirth(request.getDateOfBirth())
                 .heightCm(request.getHeightCm())
                 .weightKg(request.getWeightKg())
@@ -132,12 +122,17 @@ public class AuthService {
                 .cookingTimeMinutes(request.getCookingTimeMinutes())
                 .build();
 
-        userProfileRepository.save(userProfile);
+        // FIX: Capture the saved profile into a variable
+        UserProfile savedProfile = userProfileRepository.save(userProfile);
 
-        // 7. Generate a JWT for the new user
+        // 7. Generate JWT
         String jwtToken = jwtService.generateToken(savedUser);
 
-        // 8. Return the AuthResponse
+        // 8. TRIGGER AI (The Fix: This happens BEFORE return)
+        // We use the helper method mapProfileToMap to prepare data for Python
+        aiTriggerService.triggerPlanGeneration(savedUser, mapProfileToMap(savedProfile));
+
+        // 9. Return Response
         return AuthResponse.builder()
                 .token(jwtToken)
                 .email(savedUser.getEmail())
@@ -145,10 +140,6 @@ public class AuthService {
                 .build();
     }
 
-    /**
-     * Authenticates an existing user and returns a JWT.
-     * (This method remains unchanged)
-     */
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -167,5 +158,20 @@ public class AuthService {
                 .email(user.getEmail())
                 .userId(user.getUserId())
                 .build();
+    }
+
+    // --- HELPER METHOD TO SEND CLEAN DATA TO PYTHON ---
+    private Map<String, Object> mapProfileToMap(UserProfile p) {
+        Map<String, Object> map = new HashMap<>();
+        // we use .name() or .toString() on Enums to ensure Python gets a String, not a Java Object
+        map.put("primaryGoal", p.getPrimaryGoal() != null ? p.getPrimaryGoal().toString() : "MAINTAIN");
+        map.put("experienceLevel", p.getExperienceLevel() != null ? p.getExperienceLevel().toString() : "BEGINNER");
+        map.put("weightKg", p.getWeightKg());
+        map.put("dietaryType", p.getDietaryType() != null ? p.getDietaryType().toString() : "NON_VEG");
+        map.put("activityLevel", p.getActivityLevel() != null ? p.getActivityLevel().toString() : "SEDENTARY");
+        map.put("workoutLocation", p.getWorkoutLocation() != null ? p.getWorkoutLocation().toString() : "COMMERCIAL_GYM");
+
+        // You can add more fields if your Python prompts need them
+        return map;
     }
 }
